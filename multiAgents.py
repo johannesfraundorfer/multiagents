@@ -71,8 +71,8 @@ class ReflexAgent(Agent):
         successorGameState = currentGameState.generatePacmanSuccessor(action)
         newPos = successorGameState.getPacmanPosition()
         newFood = successorGameState.getFood()
-        #newGhostStates = successorGameState.getGhostStates()
-        #newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+        # newGhostStates = successorGameState.getGhostStates()
+        # newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
 
         "*** YOUR CODE HERE ***"
@@ -83,24 +83,32 @@ class ReflexAgent(Agent):
         newFoodList = newFood.asList()
         nearestFood = math.inf
         nearestGhost = math.inf
-        newScore = 0
+        foodScore = 0
 
+        # Award the Pacman for moving to a food position
         if newPos in currentFoodList:
-            newScore += 15.0
+            foodScore = 15.0
 
-        distanceFromFood = [math.dist(newPos, foodPos) for foodPos in newFoodList]
+        # Compute the distance to the closest food
+        distanceFromFood = [manhattanDistance(newPos, foodPos) for foodPos in newFoodList]
         allFood = len(newFoodList)
         if len(distanceFromFood):
             nearestFood = min(distanceFromFood)
 
-        score += 15.0 / nearestFood - 5.0 * allFood + newScore
+        # Award score by:
+        # * Adding Weighted inverse of nearest food: The closest to the food, the highest the score
+        # * Subtracting remaining food to eat
+        # * Adding the score of moving to a food position
+        score += 15.0 / nearestFood - 5.0 * allFood + foodScore
 
+        # Compute distance to the nearest ghost
         for n in updatedGhostPositions:
             distance = manhattanDistance(newPos, n)
             nearestGhost = min([nearestGhost, distance])
 
+        # If the ghost is very close, we subtract a significant amount of points
         if nearestGhost < 5:
-            score -= 100
+            score -= 100.0
 
         return score
 
