@@ -172,28 +172,42 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
         "*** YOUR CODE HERE ***"
-        return self.max(gameState, 0, 0)[0]
+        return self.maxAgent(gameState, agentIndex = 0, depth = 0)[0]
 
-    def minimax(self, gameState, agentIndex, depth):
+    '''
+        Returns the evaluation value of the given state for the given agent (Pacman - 0 or Ghost - >= 1) at the 
+        specified depth
+    '''
+    def value(self, gameState, agentIndex, depth):
+        # Max depth reached, lose state or win state 
         if depth == gameState.getNumAgents() * self.depth or gameState.isLose() or gameState.isWin():
             return self.evaluationFunction(gameState)
+        # Evaluate for Pacman
         if agentIndex == 0:
-            return self.max(gameState, agentIndex, depth)[1]
+            return self.maxAgent(gameState, agentIndex, depth)[1]
+        # Evaluate for Ghost
         else:
-            return self.min(gameState, agentIndex, depth)[1]
+            return self.minAgent(gameState, agentIndex, depth)[1]
 
-    def max(self, gameState, agentIndex, depth):
+    '''
+        Returns the best possible action for the maximising agent
+    '''
+    def maxAgent(self, gameState, agentIndex, depth):
         bestAction = ("max", -math.inf)
         for action in gameState.getLegalActions(agentIndex):
-            succAction = (action, self.minimax(gameState.generateSuccessor(agentIndex, action), (depth+1) % gameState.getNumAgents(), depth + 1))
+            succAction = (action, self.value(gameState.generateSuccessor(agentIndex, action),
+                                             (depth + 1) % gameState.getNumAgents(), depth + 1))
             bestAction = max(bestAction, succAction, key=lambda x: x[1])
         return bestAction
 
-    def min(self, gameState, agentIndex, depth):
+    '''
+        Returns the best possible action for the minimising agent
+    '''
+    def minAgent(self, gameState, agentIndex, depth):
         bestAction = ("min", math.inf)
         for action in gameState.getLegalActions(agentIndex):
-            succAction = (action, self.minimax(gameState.generateSuccessor(agentIndex, action),
-                                               (depth + 1) % gameState.getNumAgents(), depth + 1))
+            succAction = (action, self.value(gameState.generateSuccessor(agentIndex, action),
+                                             (depth + 1) % gameState.getNumAgents(), depth + 1))
             bestAction = min(bestAction, succAction, key=lambda x: x[1])
         return bestAction
 
@@ -207,18 +221,27 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        return self.max(gameState, 0, 0, - math.inf, math.inf)[0]
+        return self.maxAgent(gameState, 0, 0, - math.inf, math.inf)[0]
 
+    '''
+        Returns the evaluation value of the given state for the given agent (Pacman - 0 or Ghost - >= 1) at the 
+        specified depth
+    '''
     def alphabeta(self, gameState, agentIndex, depth, alpha, beta):
-        if depth is self.depth * gameState.getNumAgents() \
-                or gameState.isLose() or gameState.isWin():
+        # Max depth reached, lose state or win state 
+        if depth == gameState.getNumAgents() * self.depth or gameState.isLose() or gameState.isWin():
             return self.evaluationFunction(gameState)
-        if agentIndex is 0:
-            return self.max(gameState, agentIndex, depth, alpha, beta)[1]
+        # Evaluate for Pacman
+        if agentIndex == 0:
+            return self.maxAgent(gameState, agentIndex, depth, alpha, beta)[1]
+        # Evaluate for Ghost
         else:
-            return self.min(gameState, agentIndex, depth, alpha, beta)[1]
+            return self.minAgent(gameState, agentIndex, depth, alpha, beta)[1]
 
-    def max(self, gameState, agentIndex, depth, alpha, beta):
+    '''
+        Returns the best possible action for the maximising agent
+    '''
+    def maxAgent(self, gameState, agentIndex, depth, alpha, beta):
         bestAction = ("max", -math.inf)
         for action in gameState.getLegalActions(agentIndex):
             succAction = (action, self.alphabeta(gameState.generateSuccessor(agentIndex, action),
@@ -232,7 +255,10 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
         return bestAction
 
-    def min(self, gameState, agentIndex, depth, alpha, beta):
+    '''
+        Returns the best possible action for the minimising agent
+    '''
+    def minAgent(self, gameState, agentIndex, depth, alpha, beta):
         bestAction = ("min", math.inf)
         for action in gameState.getLegalActions(agentIndex):
             succAction = (action, self.alphabeta(gameState.generateSuccessor(agentIndex, action),
@@ -263,8 +289,8 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         maxDepth = self.depth * gameState.getNumAgents()
         return self.expectimax(gameState, "expect", maxDepth, 0)[0]
 
-    def expectimax(self, gameState, action, depth, agentIndex):
 
+    def expectimax(self, gameState, action, depth, agentIndex):
         if depth is 0 or gameState.isLose() or gameState.isWin():
             return (action, self.evaluationFunction(gameState))
 
@@ -273,6 +299,9 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         else:
             return self.expvalue(gameState, action, depth, agentIndex)
 
+    '''
+        Returns the best possible action for the maximising agent
+    '''
     def maxvalue(self, gameState, action, depth, agentIndex):
         bestAction = ("max", -(math.inf))
         for legalAction in gameState.getLegalActions(agentIndex):
@@ -287,6 +316,9 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
             bestAction = max(bestAction, succValue, key=lambda x: x[1])
         return bestAction
 
+    '''
+        Returns the best possible action for the minimising agent (using expectimax)
+    '''
     def expvalue(self, gameState, action, depth, agentIndex):
         legalActions = gameState.getLegalActions(agentIndex)
         averageScore = 0
@@ -309,31 +341,39 @@ def betterEvaluationFunction(currentGameState):
     newPos = currentGameState.getPacmanPosition()
     newFood = currentGameState.getFood().asList()
 
-    minFoodist = math.inf
+    # Get minimum distance to closest food
+    minFoodDist = math.inf
     for food in newFood:
-        minFoodist = min(minFoodist, manhattanDistance(newPos, food))
+        minFoodDist = min(minFoodDist, manhattanDistance(newPos, food))
 
-    ghostDist = 0
+    # Get the minimum distance to the closest ghost
+    minGhostDist = math.inf
     for ghost in currentGameState.getGhostPositions():
-        ghostDist = manhattanDistance(newPos, ghost)
-        if (ghostDist < 2):
-            return -float('inf')
+        minGhostDist = min(minGhostDist, manhattanDistance(newPos, ghost))
+
+    # Ghost is to close, return a very bad score
+    if (minGhostDist < 2):
+        return -float('inf')
 
     capsLeft = len(currentGameState.getCapsules())
     foodLeft = currentGameState.getNumFood()
-    foodMultiplier = 950050
-    capsMultiplier = 10000
-    foodDistMultiplier = 950
+    foodMultiplier = 10000
+    capsMultiplier = 5000
+    foodDistMultiplier = 200
     additionalFactors = 0
 
+    # Give a high score to win state and low score to lose
     if currentGameState.isLose():
         additionalFactors -= 50000
     elif currentGameState.isWin():
         additionalFactors += 50000
 
-    return 1.0/(foodLeft + 1) * foodMultiplier + ghostDist + \
-           1.0/(minFoodist + 1) * foodDistMultiplier + \
-           1.0/(capsLeft + 1) * capsMultiplier + additionalFactors
+    # Weighted sum of scores:
+    # * Inverse of amount of food left: the less food left, the higher the score
+    # * Minimum distance to ghost: the closest the ghost, the worse
+    # * Inverse of minimum distance to food: the closest the food, the better
+    # * Inverse of amount of capsules left: the less capsules left, the higher the score
+    return 1.0/(foodLeft + 1) * foodMultiplier + minGhostDist + 1.0/(minFoodDist + 1) * foodDistMultiplier + 1.0/(capsLeft + 1) * capsMultiplier + additionalFactors
 
 # Abbreviation
 better = betterEvaluationFunction
